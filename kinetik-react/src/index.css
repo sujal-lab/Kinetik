@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apply default theme colors and font to the body */
+body {
+  @apply bg-kinetik-light-bg-from dark:bg-kinetik-dark-bg-from text-kinetik-light-text dark:text-kinetik-dark-text transition-colors duration-300 font-poppins;
+}
+
+/* Optional: Scrollbar styling for a cleaner look */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 20px;
+}
