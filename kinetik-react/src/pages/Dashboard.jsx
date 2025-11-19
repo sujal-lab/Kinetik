@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
+import StatCard from '../components/Statcard'; // <-- Import the new component
 
 const Dashboard = () => {
     // --- State Management ---
@@ -8,7 +9,7 @@ const Dashboard = () => {
         protein: 0,
         carbs: 0,
         fats: 0,
-        targetCalories: 2500 // Default goal
+        targetCalories: 2500
     });
     const [calendarDays, setCalendarDays] = useState([]);
     
@@ -18,7 +19,7 @@ const Dashboard = () => {
     const [aiResponse, setAiResponse] = useState('');
     const [isLoadingAI, setIsLoadingAI] = useState(false);
 
-    // Refs for Charts (so we can destroy/recreate them)
+    // Refs for Charts
     const calorieChartRef = useRef(null);
     const weightChartRef = useRef(null);
     const calorieChartInstance = useRef(null);
@@ -26,7 +27,7 @@ const Dashboard = () => {
 
     // --- Configuration ---
     const API_BASE_URL = 'http://localhost:3000';
-    const USER_ID = 1; // Mocked User ID
+    const USER_ID = 1; 
     const GOALS = { protein: 150, carbs: 250, fat: 70 };
 
     // Helper: Get local YYYY-MM-DD
@@ -41,7 +42,7 @@ const Dashboard = () => {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
 
-    // --- 1. Fetch Dashboard Data ---
+    // --- 1. Fetch Data ---
     useEffect(() => {
         const fetchSummary = async () => {
             try {
@@ -67,7 +68,7 @@ const Dashboard = () => {
             try {
                 const endDate = new Date();
                 const startDate = new Date();
-                startDate.setDate(endDate.getDate() - 34); // 35 days grid
+                startDate.setDate(endDate.getDate() - 34); 
                 const endDateStr = getLocalYYYYMMDD(endDate);
 
                 const res = await fetch(`${API_BASE_URL}/api/nutrition/calendar-summary?user_id=${USER_ID}&endDate=${endDateStr}`);
@@ -102,23 +103,16 @@ const Dashboard = () => {
         fetchCalendar();
     }, []);
 
-    // --- 2. Initialize Calorie Gauge Chart ---
+    // --- 2. Charts ---
     useEffect(() => {
         if (calorieChartRef.current) {
-            // Destroy old chart if it exists
-            if (calorieChartInstance.current) {
-                calorieChartInstance.current.destroy();
-            }
+            if (calorieChartInstance.current) calorieChartInstance.current.destroy();
 
             const ctx = calorieChartRef.current.getContext('2d');
             const remaining = Math.max(0, summary.targetCalories - summary.calories);
-            
-            // Create gradient
             const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-            gradient.addColorStop(0, '#2DD4BF'); // mint
-            gradient.addColorStop(1, '#30C0F0'); // cyan
-
-            // Determine dark mode for background color (basic check)
+            gradient.addColorStop(0, '#2DD4BF');
+            gradient.addColorStop(1, '#30C0F0');
             const isDark = document.documentElement.classList.contains('dark');
             const gaugeBg = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
 
@@ -144,24 +138,17 @@ const Dashboard = () => {
                 }
             });
         }
-        
-        return () => {
-            if (calorieChartInstance.current) calorieChartInstance.current.destroy();
-        };
-    }, [summary]); // Re-run when summary changes
+        return () => { if (calorieChartInstance.current) calorieChartInstance.current.destroy(); };
+    }, [summary]);
 
-    // --- 3. Initialize Weight Chart (Static for demo) ---
     useEffect(() => {
         if (weightChartRef.current) {
-            if (weightChartInstance.current) {
-                weightChartInstance.current.destroy();
-            }
+            if (weightChartInstance.current) weightChartInstance.current.destroy();
 
             const ctx = weightChartRef.current.getContext('2d');
             const gradient = ctx.createLinearGradient(0, 0, 0, 250);
             gradient.addColorStop(0, '#2DD4BF');
             gradient.addColorStop(1, '#FF9A59');
-
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? 'rgba(230, 247, 242, 0.65)' : '#6B7280';
 
@@ -182,69 +169,45 @@ const Dashboard = () => {
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { 
-                            min: 170, max: 190, 
-                            grid: { display: false },
-                            ticks: { color: textColor }
-                        },
-                        x: { 
-                            grid: { display: false },
-                            ticks: { color: textColor }
-                        }
+                        y: { min: 170, max: 190, grid: { display: false }, ticks: { color: textColor } },
+                        x: { grid: { display: false }, ticks: { color: textColor } }
                     }
                 }
             });
         }
-        return () => {
-            if (weightChartInstance.current) weightChartInstance.current.destroy();
-        };
+        return () => { if (weightChartInstance.current) weightChartInstance.current.destroy(); };
     }, []);
 
-    // --- 4. AI Generation Logic ---
+    // --- 3. AI ---
     const handleAIGenerate = async (planType) => {
         setAIModalOpen(true);
         setAiPlanType(planType);
         setIsLoadingAI(true);
         setAiResponse('');
-
         try {
-            // 1. Get User Data
             const userRes = await fetch(`${API_BASE_URL}/api/user/get-user-data`);
             if (!userRes.ok) throw new Error('Failed to fetch user data');
             const userData = await userRes.json();
 
-            // 2. Build Prompt
-            const systemPrompt = "You are Kinetik, an expert fitness coach. Format your response in HTML (use <h3>, <ul>, <li>, <strong>). Do NOT use Markdown symbols like **.";
-            const userQuery = `
-                Generate a **${planType}** for me.
-                Name: ${userData.full_name}, Goal: ${userData.goal}, 
-                Weight: ${userData.weight_kg}kg, Target: ${userData.target_weight_kg}kg.
-                Diet: ${userData.meal_preference}, Workout time: ${userData.preferred_workout_time}.
-            `;
+            const systemPrompt = "You are Kinetik, an expert fitness coach. Format response in HTML (<h3>, <ul>, <li>).";
+            const userQuery = `Generate a **${planType}** for me. Name: ${userData.full_name}, Goal: ${userData.goal}.`;
 
-            // 3. Call Gemini API
-            const apiKey = "AIzaSyDIByreG6s5ReuwMEhBajJA883QrzbrFaw"; // Use env variable in production
+            const apiKey = "AIzaSyDIByreG6s5ReuwMEhBajJA883QrzbrFaw";
             const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] }
-                })
+                body: JSON.stringify({ contents: [{ parts: [{ text: userQuery }] }], systemInstruction: { parts: [{ text: systemPrompt }] } })
             });
 
             const result = await apiRes.json();
-            const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Error: No response.";
-            setAiResponse(text);
-
+            setAiResponse(result.candidates?.[0]?.content?.parts?.[0]?.text || "Error: No response.");
         } catch (error) {
-            setAiResponse(`Error: ${error.message}. Is the backend running?`);
+            setAiResponse(`Error: ${error.message}`);
         } finally {
             setIsLoadingAI(false);
         }
     };
 
-    // --- Helper Component for Macros ---
     const MacroBar = ({ label, value, max, colorClass }) => {
         const percent = Math.min(100, (value / max) * 100);
         return (
@@ -254,10 +217,7 @@ const Dashboard = () => {
                     <span className="text-sm font-medium text-kinetik-light-text-muted dark:text-kinetik-dark-text-muted">{Math.round(value)}g / {max}g</span>
                 </div>
                 <div className="w-full bg-black/5 dark:bg-white/10 rounded-full h-3">
-                    <div 
-                        className={`h-3 rounded-full transition-all duration-1000 ease-out ${colorClass}`} 
-                        style={{ width: `${percent}%` }}
-                    ></div>
+                    <div className={`h-3 rounded-full transition-all duration-1000 ease-out ${colorClass}`} style={{ width: `${percent}%` }}></div>
                 </div>
             </div>
         );
@@ -267,7 +227,6 @@ const Dashboard = () => {
         <main className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-8 md:ml-64">
             <div className="flex flex-col gap-8">
                 
-                {/* Section 1: Snapshot */}
                 <section className="animate-fade-in-up">
                     <h1 className="text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-kinetik-mint to-kinetik-cyan">
                         Today's Snapshot
@@ -276,35 +235,32 @@ const Dashboard = () => {
                         {currentDateStr}
                     </p>
 
+                    {/* --- REPLACED HARDCODED CARDS WITH COMPONENT --- */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-6">
-                        {/* Steps */}
-                        <div className="kinetik-card p-7 flex flex-col items-center justify-center text-center">
-                            <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-kinetik-cyan/10 dark:bg-kinetik-cyan/20 text-kinetik-cyan flex items-center justify-center">
-                                <svg className="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12h3l3-9 6 18 3-9h3" /></svg>
-                            </div>
-                            <div className="text-6xl font-extrabold text-kinetik-light-text dark:text-kinetik-dark-text mt-4">8547</div>
-                            <div className="text-sm font-semibold uppercase tracking-wider text-kinetik-light-text-muted dark:text-kinetik-dark-text-muted mt-2">Steps</div>
-                        </div>
-                        {/* Calories */}
-                        <div className="kinetik-card p-7 flex flex-col items-center justify-center text-center">
-                            <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-kinetik-coral/10 dark:bg-kinetik-coral/20 text-kinetik-coral flex items-center justify-center">
-                                <svg className="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" /></svg>
-                            </div>
-                            <div className="text-6xl font-extrabold text-kinetik-light-text dark:text-kinetik-dark-text mt-4">{summary.calories}</div>
-                            <div className="text-sm font-semibold uppercase tracking-wider text-kinetik-light-text-muted dark:text-kinetik-dark-text-muted mt-2">Calories Burned</div>
-                        </div>
-                        {/* Water */}
-                        <div className="kinetik-card p-7 flex flex-col items-center justify-center text-center">
-                             <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-kinetik-cyan/10 dark:bg-kinetik-cyan/20 text-kinetik-cyan flex items-center justify-center">
-                                <svg className="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 16.5A5.25 5.25 0 0012 21.75a5.25 5.25 0 004.5-5.25c0-4.005-4.5-10.5-4.5-10.5s-4.5 6.495-4.5 10.5z" /></svg>
-                            </div>
-                            <div className="text-6xl font-extrabold text-kinetik-light-text dark:text-kinetik-dark-text mt-4">6 / 8</div>
-                            <div className="text-sm font-semibold uppercase tracking-wider text-kinetik-light-text-muted dark:text-kinetik-dark-text-muted mt-2">Glasses of Water</div>
-                        </div>
+                        <StatCard 
+                            value="8547" 
+                            label="Steps" 
+                            color="text-kinetik-cyan" 
+                            bgColor="bg-kinetik-cyan/10 dark:bg-kinetik-cyan/20"
+                            icon={<svg className="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12h3l3-9 6 18 3-9h3" /></svg>}
+                        />
+                        <StatCard 
+                            value={summary.calories} 
+                            label="Calories Burned" 
+                            color="text-kinetik-coral" 
+                            bgColor="bg-kinetik-coral/10 dark:bg-kinetik-coral/20"
+                            icon={<svg className="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" /></svg>}
+                        />
+                        <StatCard 
+                            value="6 / 8" 
+                            label="Glasses of Water" 
+                            color="text-kinetik-cyan" 
+                            bgColor="bg-kinetik-cyan/10 dark:bg-kinetik-cyan/20"
+                            icon={<svg className="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 16.5A5.25 5.25 0 0012 21.75a5.25 5.25 0 004.5-5.25c0-4.005-4.5-10.5-4.5-10.5s-4.5 6.495-4.5 10.5z" /></svg>}
+                        />
                     </div>
                 </section>
 
-                {/* Section 2: Tip of Day */}
                 <section className="kinetik-card px-6 pt-7 pb-9 flex items-center gap-5 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                     <div className="flex-shrink-0 w-16 h-16 rounded-full bg-gradient-to-br from-kinetik-mint to-kinetik-cyan/70 flex items-center justify-center text-white">
                         <span className="text-4xl">✦</span>
@@ -317,7 +273,6 @@ const Dashboard = () => {
                     </div>
                 </section>
 
-                {/* Section 3: Gauges & Macros */}
                 <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="kinetik-card px-6 pt-7 pb-9 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
                         <h3 className="text-2xl font-bold text-kinetik-light-text dark:text-kinetik-dark-text">Calorie Intake</h3>
@@ -344,7 +299,6 @@ const Dashboard = () => {
                     </div>
                 </section>
 
-                {/* Section 4: Calendar & Weight */}
                 <section className="kinetik-card px-6 pt-7 pb-9 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
                     <h3 className="text-2xl font-bold text-kinetik-light-text dark:text-kinetik-dark-text">Activity Calendar</h3>
                     <div className="grid grid-cols-7 gap-1.5 md:gap-2 mt-4">
@@ -380,7 +334,6 @@ const Dashboard = () => {
                             })
                         )}
                     </div>
-                    {/* Legend */}
                     <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4">
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full bg-kinetik-mint/50"></div>
@@ -404,7 +357,6 @@ const Dashboard = () => {
                     </div>
                 </section>
 
-                {/* Section 5: AI Plans */}
                 <section className="kinetik-card animated-ai-card px-6 pt-8 pb-10 relative overflow-hidden animate-fade-in-up" style={{ animationDelay: '600ms' }}>
                     <div className="absolute -top-1/3 -left-1/3 w-2/3 h-2/3 bg-kinetik-cyan/20 dark:bg-kinetik-cyan/10 rounded-full blur-3xl opacity-50 dark:opacity-30 pointer-events-none"></div>
                     <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 items-center gap-5">
@@ -426,7 +378,6 @@ const Dashboard = () => {
                 </section>
             </div>
 
-            {/* AI Modal */}
             {isAIModalOpen && (
                 <div className="fixed inset-0 z-[100] p-4 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                     <div className="relative w-full max-w-2xl max-h-[80vh] bg-gradient-to-b from-kinetik-light-bg-to to-kinetik-light-bg-from dark:from-kinetik-dark-bg-to dark:to-kinetik-dark-bg-from rounded-2xl shadow-2xl flex flex-col">

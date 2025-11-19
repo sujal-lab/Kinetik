@@ -2,12 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Apply default theme colors and font to the body */
+/* Apply default theme colors to body */
 body {
   @apply bg-kinetik-light-bg-from dark:bg-kinetik-dark-bg-from text-kinetik-light-text dark:text-kinetik-dark-text transition-colors duration-300 font-poppins;
 }
 
-/* Optional: Scrollbar styling for a cleaner look */
+/* --- SHARED COMPONENTS (Matches Dashboard) --- */
+
+/* The Glass Card style used in Dashboard */
+.kinetik-card {
+  @apply relative overflow-hidden rounded-2xl transition-all duration-300;
+  /* Light Mode */
+  background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.75));
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+
+/* Dark Mode Overrides */
+.dark .kinetik-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 12px 35px rgba(0,0,0,0.5), inset 0 0 12px rgba(48,192,240,0.08);
+}
+
+.kinetik-card:hover {
+  transform: translateY(-3px);
+}
+
+.dark .kinetik-card:hover {
+  box-shadow: 0 12px 35px rgba(0,0,0,0.8), 0 0 12px rgba(45,212,191,0.25), 0 0 30px rgba(48,192,240,0.15);
+}
+
+/* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 8px;
 }
