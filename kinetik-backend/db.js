@@ -25,7 +25,10 @@ const pool = process.env.MYSQL_URL || process.env.DATABASE_URL
         port: Number(process.env.DB_PORT || process.env.MYSQLPORT || 33444),
         waitForConnections: true,
         connectionLimit: 10,
-        queueLimit: 0
+        queueLimit: 0,
+        ssl: {
+            rejectUnauthorized: false
+        }
     });
 
 // Export the pool so other files can use it

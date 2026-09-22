@@ -27,6 +27,8 @@ app.use(cors());
 
 const PORT = process.env.PORT || 3000;
 
+import pool from './db.js';
+
 // Health check and root route (required for Render)
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -34,6 +36,17 @@ app.get('/health', (req, res) => {
 
 app.get('/', (req, res) => {
     res.json({ message: 'Kinetik Backend API is live!', status: 'running' });
+});
+
+// Database connectivity test endpoint
+app.get('/api/db-test', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SHOW TABLES');
+        res.json({ status: 'connected', tables: rows });
+    } catch (err) {
+        console.error('Database connection error:', err);
+        res.status(500).json({ status: 'error', error: err.message, code: err.code });
+    }
 });
 
 // --- 3. Load Routes ---

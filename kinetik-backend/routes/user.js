@@ -43,7 +43,7 @@ router.get('/get-user-data', async (req, res) => {
 
     } catch (error) {
         console.error('Server Error:', error.message);
-        res.status(500).json({ error: 'An error occurred on the server.' });
+        res.status(500).json({ error: error.message, code: error.code });
     }
 });
 
