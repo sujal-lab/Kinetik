@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import WorkoutSection from '../components/WorkoutSection';
+import { API_BASE_URL } from '../config/api';
 
 const Workout = () => {
     // --- STATE ---
     const [exerciseDB, setExerciseDB] = useState({ arms: [], legs: [], core: [], cardio: [] });
     const [logs, setLogs] = useState([]);
     const [goal, setGoal] = useState(500);
-    
-    // --- CONFIG ---
-    const API_BASE_URL = 'http://localhost:3000';
 
     // --- EFFECTS ---
     useEffect(() => {

@@ -9,26 +9,24 @@
  */
 
 import mysql from 'mysql2/promise';
+import 'dotenv/config';
 
-//
-// !! =============================================================== !!
-// !!                      ENTER YOUR DB CREDS HERE                   !!
-// !!  This is the *only* file where you need to put your DB credentials. !!
-// !! =============================================================== !!
-//
-const dbConfig = {
-    host: 'caboose.proxy.rlwy.net',      // e.g., 'caboose.proxy.rlwy.net'
-    user: 'root',                    // e.g., 'root'
-    password: 'dSgblCyJflolPhijcCsZlOdTcFLrvRdf',
-    database: 'railway',            // e.g., 'railway'
-    port: '33444',    // e.g., '12345' (This is a number)
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-};
-
-// Create a connection "pool" (a collection of reusable connections)
-const pool = mysql.createPool(dbConfig);
+// Priority order:
+// 1. Connection URL (MYSQL_URL or DATABASE_URL)
+// 2. Individual environment variables (DB_HOST / MYSQLHOST, etc.)
+// 3. Fallback credentials for direct access
+const pool = process.env.MYSQL_URL || process.env.DATABASE_URL
+    ? mysql.createPool(process.env.MYSQL_URL || process.env.DATABASE_URL)
+    : mysql.createPool({
+        host: process.env.DB_HOST || process.env.MYSQLHOST || 'caboose.proxy.rlwy.net',
+        user: process.env.DB_USER || process.env.MYSQLUSER || 'root',
+        password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || 'dSgblCyJflolPhijcCsZlOdTcFLrvRdf',
+        database: process.env.DB_NAME || process.env.MYSQLDATABASE || 'railway',
+        port: Number(process.env.DB_PORT || process.env.MYSQLPORT || 33444),
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+    });
 
 // Export the pool so other files can use it
 export default pool;

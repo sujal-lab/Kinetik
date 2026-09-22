@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
 import StatCard from '../components/Statcard'; // <-- Import the new component
+import { API_BASE_URL } from '../config/api';
 
 const Dashboard = () => {
     // --- State Management ---
@@ -26,7 +27,6 @@ const Dashboard = () => {
     const weightChartInstance = useRef(null);
 
     // --- Configuration ---
-    const API_BASE_URL = 'http://localhost:3000';
     const USER_ID = 1; 
     const GOALS = { protein: 150, carbs: 250, fat: 70 };
 

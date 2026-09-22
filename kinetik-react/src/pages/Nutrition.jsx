@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MealSection from '../components/MealSection';
 import NutritionModals from '../components/NutritionModals';
+import { API_BASE_URL } from '../config/api';
 
 const Nutrition = () => {
     // --- STATE ---
@@ -21,7 +22,7 @@ const Nutrition = () => {
     // Config
     const goals = { calories: 2200, protein: 150, carbs: 250, fat: 60 };
     const userId = 1;
-    const apiBaseUrl = 'http://localhost:3000';
+    const apiBaseUrl = API_BASE_URL;
     const today = new Date().toISOString().split('T')[0];
     
     // Refs

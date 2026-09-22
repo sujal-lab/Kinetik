@@ -9,6 +9,7 @@
  */
 
 // --- 1. Imports ---
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 
@@ -25,6 +26,15 @@ app.use(express.json({ limit: '10mb' }));
 app.use(cors());
 
 const PORT = process.env.PORT || 3000;
+
+// Health check and root route (required for Render)
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/', (req, res) => {
+    res.json({ message: 'Kinetik Backend API is live!', status: 'running' });
+});
 
 // --- 3. Load Routes ---
 app.use('/api/user', userRoutes);
